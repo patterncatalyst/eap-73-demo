@@ -1,0 +1,47 @@
+= JBoss Enterprise Application Server Bootable JAR on JBoss EAP XP 2.0
+:toc:
+:source-highlighter: highlight.js
+
+== Running the Bootable JAR Application Locally
+
+To run this Bootable application on your local host:
+
+[source,options="nowrap",subs="attributes+"]
+----
+$ mvn clean package -Pbootable-jar
+----
+
+Once the build is succeeded, run the bootable jar:
+
+[source,options="nowrap",subs="attributes+"]
+----
+$ java -jar target/xp20-demo-2.0.0.GA-bootable.jar
+----
+
+== Interacting with the Bootable JAR Application Locally
+
+To interact with your Bootable application while it's running locally, use the form at `http://localhost:8080` or the `curl` command:
+
+[source,options="nowrap",subs="attributes+"]
+----
+$ curl http://localhost:8080/api/greeting
+{"content":"Hello, World!"}
+
+$ curl http://localhost:8080/api/greeting?name=Bootable
+{"content":"Hello, Bootable!"}
+----
+
+== Running the Bootable JAR Application on OpenShift Cluster:
+
+To deploy your Bootable JAR application, be sure to login with your credential and create a new project in OpenShift cluster:
+
+[source,options="nowrap",subs="attributes+"]
+----
+$ oc login -u USERNAME -p PASSWORD
+
+$ oc new-project xp2-demo
+
+$ mvn clean oc:deploy -Pbootable-jar-openshift
+----
+
+Go to `Developer console` then you should see that a pod is running. When you click on `Open URL` in Topology view, you will see the GUI to invoke the REST API.

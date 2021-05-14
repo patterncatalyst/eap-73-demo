@@ -1,0 +1,146 @@
+= JBoss Enterprise Application Server Health, Metrics and Tracing on JBoss EAP XP 2.0
+:toc:
+:source-highlighter: highlight.js
+:imagesdir: ../images
+
+== Running with EAP Locally
+
+- Download and install JBoss EAP 7.3
+- Patch JBoss EAP 7.3 to latest patch
+- Download and install EAP XP 2.0 over the EAP 7.3 patched install
+- Ensure to have JBOSS_HOME setup on your path
+- Setup an admin user
+
+Build the code
+[source,options="nowrap",subs="attributes+"]
+----
+$ mvn clean compile
+----
+
+To run this application in the local application server, run the JBoss Server and deploy the war through
+the server admin console
+
+Note:
+
+----
+Running with this method will default to the following uri:
+http://localhost:8080/eap-mp-health-metrics-tracing-demo/
+----
+
+== Running the Bootable JAR Application Locally
+
+To run this Bootable application on your local host:
+
+[source,options="nowrap",subs="attributes+"]
+----
+$ mvn clean package -Pbootable-jar
+----
+
+Once the build is succeeded, run the bootable jar:
+
+[source,options="nowrap",subs="attributes+"]
+----
+$ java -jar target/eap-mp-health-metrics-tracing-demo-bootable.jar
+----
+
+== Interacting with the Bootable JAR Application Locally
+
+To interact with your Bootable application while it's running locally, use the form at `http://localhost:8080` or the `curl` command:
+
+[source,options="nowrap",subs="attributes+"]
+----
+$ curl http://localhost:8080/rest/json
+{"result":"Hello, JBoss EAP 7.3 with MicroProfile!"}
+
+$ curl http://localhost:8080/rest/xml
+<xml><result>Hello, JBoss EAP 7.3 with MicroProfile!</result></xml>
+----
+
+== Using Jaeger to see tracing output
+
+In order to run and test with Jaeger, we will use the all-in-one docker image:
+[source,options="nowrap",subs="attributes+"]
+----
+$ docker run -d --name jaeger \
+  -e COLLECTOR_ZIPKIN_HOST_PORT=:9411 \
+  -p 5775:5775/udp \
+  -p 6831:6831/udp \
+  -p 6832:6832/udp \
+  -p 5778:5778 \
+  -p 16686:16686 \
+  -p 14268:14268 \
+  -p 14250:14250 \
+  -p 9411:9411 \
+  jaegertracing/all-in-one
+----
+
+Additional information can be found here:
+
+link:https://www.jaegertracing.io/docs/1.22/getting-started/[Jaeger Tracing with Docker]
+
+To run the Jaeger UI, browse to http://localhost:16686
+
+image::jaeger-1.png[Jaeger UI]
+
+- Make sure Jaeger is running prior to starting the JBoss Server.
+
+- If you are running with JBoss locally, you will find your service listed in the
+service dropdown.
+
+- If you are running in a bootable jar, you will find the ROOT.war listed in the
+service dropdown.
+
+- Select the service and choose the JSON option in the application page.  Then in
+Jaeger UI, select the Find Traces button and you will see your trace.
+
+image::jaeger-2.png[Jaeger Trace]
+
+== Using Prometheus for metrics output
+
+We will use a docker image for Prometheus as well to see metrics output
+
+[source,options="nowrap",subs="attributes+"]
+----
+$ docker run -p 9090:9090 -v /tmp/prometheus.yml:/etc/prometheus/prometheus.yml prom/prometheus
+----
+
+In order to do this, we must use the prometheus.yml file in the projects, configuration
+directory.  We will put that into the /tmp directory for this test.
+
+For more about the link:https://hub.docker.com/r/prom/prometheus[prometheus image]
+
+For more about using the link:https://docs.docker.com/config/daemon/prometheus/[prometheus image]
+
+Make sure to run the Prometheus image first.  Then start either your JBoss locally
+or the application in a bootable jar.
+
+Navigate to http://localhost:9090/targets and you will see several options now based on
+the prometheus.yml configuration.
+
+image:prometheus-1.png[Prometheus Targets]
+
+Not select the *Classic UI* menu option.
+
+Here, you can create a graph with several options:
+
+image:prometheus-2.png[Prometheus Graph Options]
+
+Choose what you wish to look at.
+
+Note Useful tool:
+link:https://codebeautify.org/yaml-validator/cb6e91ef[YAML Validator]
+
+== Running the Bootable JAR Application on OpenShift Cluster:
+
+To deploy your Bootable JAR application, be sure to login with your credential and create a new project in OpenShift cluster:
+
+[source,options="nowrap",subs="attributes+"]
+----
+$ oc login -u USERNAME -p PASSWORD
+
+$ oc new-project eap-mp-health-metrics-tracing-demo
+
+$ mvn clean oc:deploy -Pbootable-jar-openshift
+----
+
+Go to `Developer console` then you should see that a pod is running. When you click on `Open URL` in Topology view, you will see the GUI to invoke the REST API.
